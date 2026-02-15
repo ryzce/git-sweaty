@@ -236,17 +236,11 @@ detect_existing_fork_repo() {
   local upstream_repo="$1"
   local login="$2"
   local explicit="${GIT_SWEATY_FORK_REPO:-}"
-  local default_fork discovered discovered_api
+  local discovered discovered_api
 
   if [[ -n "$explicit" ]]; then
     gh repo view "$explicit" >/dev/null 2>&1 || return 1
     printf '%s\n' "$explicit"
-    return 0
-  fi
-
-  default_fork="${login}/$(repo_name_from_slug "$upstream_repo")"
-  if gh repo view "$default_fork" >/dev/null 2>&1; then
-    printf '%s\n' "$default_fork"
     return 0
   fi
 
@@ -630,8 +624,6 @@ main() {
   fi
 
   repo_dir="$(pwd)/$(repo_name_from_slug "$upstream_repo")"
-  info "No compatible local clone detected in current working tree."
-  info "Upstream repository: $upstream_repo"
   setup_mode="$(prompt_setup_mode)"
   if [[ "$setup_mode" == "online" ]]; then
     run_online_setup "$upstream_repo" "$@"
@@ -639,7 +631,9 @@ main() {
   fi
 
   require_cmd git
-  info "Target clone directory: $repo_dir"
+  info "No compatible local clone detected in current working tree."
+  info "Upstream repository: $upstream_repo"
+  info "Default clone directory: $repo_dir"
   if auto_detect_existing_compatible_clone "$upstream_repo" "$repo_dir"; then
     repo_dir="$BOOTSTRAP_SELECTED_REPO_DIR"
     info "Detected existing compatible local clone at $repo_dir"

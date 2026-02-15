@@ -202,6 +202,36 @@ class SetupAuthDispatchTests(unittest.TestCase):
         value = setup_auth._detect_strava_profile_url({"athlete": {"id": 42}})
         self.assertEqual(value, "https://www.strava.com/athletes/42")
 
+    def test_dashboard_url_from_pages_api_prefers_cname(self) -> None:
+        with mock.patch(
+            "setup_auth._run",
+            return_value=_completed_process(
+                returncode=0,
+                stdout='{"cname":"strava.nedevski.com","html_url":"https://nedevski.github.io/strava/"}',
+            ),
+        ):
+            value = setup_auth._dashboard_url_from_pages_api("nedevski/strava")
+        self.assertEqual(value, "https://strava.nedevski.com/")
+
+    def test_dashboard_url_from_pages_api_falls_back_to_html_url(self) -> None:
+        with mock.patch(
+            "setup_auth._run",
+            return_value=_completed_process(
+                returncode=0,
+                stdout='{"cname":"","html_url":"https://nedevski.github.io/strava/"}',
+            ),
+        ):
+            value = setup_auth._dashboard_url_from_pages_api("nedevski/strava")
+        self.assertEqual(value, "https://nedevski.github.io/strava/")
+
+    def test_dashboard_url_from_pages_api_returns_none_on_error(self) -> None:
+        with mock.patch(
+            "setup_auth._run",
+            return_value=_completed_process(returncode=1, stderr="gh: Not Found"),
+        ):
+            value = setup_auth._dashboard_url_from_pages_api("nedevski/strava")
+        self.assertIsNone(value)
+
     def test_resolve_strava_profile_url_non_interactive_uses_existing_variable(self) -> None:
         args = Namespace(strava_profile_url=None)
         with (

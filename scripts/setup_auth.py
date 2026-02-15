@@ -647,6 +647,53 @@ def _pages_url_from_slug(slug: str) -> str:
     return f"https://{owner}.github.io/{repo}/"
 
 
+def _normalize_dashboard_url(value: str) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    if not re.match(r"^[a-z][a-z0-9+.-]*://", raw, flags=re.IGNORECASE):
+        raw = f"https://{raw.lstrip('/')}"
+
+    parsed = urllib.parse.urlparse(raw)
+    scheme = str(parsed.scheme or "").lower()
+    if scheme not in {"http", "https"}:
+        return ""
+
+    host = str(parsed.netloc or "").strip()
+    if not host:
+        return ""
+
+    path = str(parsed.path or "/")
+    if not path.startswith("/"):
+        path = f"/{path}"
+    if not path.endswith("/") and not parsed.query:
+        path = f"{path}/"
+
+    return urllib.parse.urlunparse((scheme, host, path, "", parsed.query, ""))
+
+
+def _dashboard_url_from_pages_api(repo: str) -> Optional[str]:
+    result = _run(["gh", "api", f"repos/{repo}/pages"], check=False)
+    if result.returncode != 0:
+        return None
+
+    try:
+        payload = json.loads(result.stdout or "{}")
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+
+    custom_url = _normalize_dashboard_url(payload.get("cname", ""))
+    if custom_url:
+        return custom_url
+
+    html_url = _normalize_dashboard_url(payload.get("html_url", ""))
+    if html_url:
+        return html_url
+    return None
+
+
 def _prompt_choice(
     prompt: str,
     choices: dict[str, str],
@@ -1826,7 +1873,7 @@ def main() -> int:
         if step.status == STATUS_MANUAL_REQUIRED and step.manual_help:
             print(f"  Manual: {step.manual_help}")
 
-    dashboard_url = _pages_url_from_slug(repo)
+    dashboard_url = _dashboard_url_from_pages_api(repo) or _pages_url_from_slug(repo)
     has_manual_steps = any(step.status == STATUS_MANUAL_REQUIRED for step in steps)
     if has_manual_steps:
         print("\nSetup completed with manual steps remaining.")
