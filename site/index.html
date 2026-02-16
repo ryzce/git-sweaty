@@ -1503,8 +1503,6 @@
           row-gap: var(--mobile-header-row-gap);
           column-gap: var(--mobile-control-col-gap);
           width: 100%;
-          max-width: calc(var(--mobile-filter-width) + var(--mobile-control-col-gap) + var(--mobile-action-width));
-          margin-inline: auto;
         }
         h1 {
           grid-column: 1 / -1;
@@ -1582,11 +1580,11 @@
         }
         #resetAllRow {
           display: block;
-          grid-column: 1 / -1;
+          grid-column: 1;
           grid-row: 5;
           width: 100%;
           max-width: 100%;
-          justify-self: center;
+          justify-self: stretch;
         }
         #resetAllRow .units-toggle-button {
           flex: 1 1 auto;
