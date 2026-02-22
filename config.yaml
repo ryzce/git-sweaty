@@ -6,7 +6,7 @@ strava:
   client_secret: "2338caa9ca9f2b5017ecc2b196366b41091f4e28"
   refresh_token: "1d09e5bb785527b342e4d8b7cb89185bc997753a"
   profile_url: "" # optional dashboard header profile link
-  include_activity_urls: false # when true, tooltip details can show links to individual Strava activities
+  include_activity_urls: true # when true, tooltip details can show links to individual Strava activities
 
 garmin:
   token_store_b64: ""
